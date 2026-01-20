@@ -34,7 +34,7 @@ complex float *ifft(complex float *samples, int length) {
     complex float *ifft_even = ifft(even_samples, length/2); complex float *ifft_odd = ifft(odd_samples, length/2); /* Recurse */
     complex float *output_value = (complex float*)malloc(sizeof(complex float) * length); /* Allocate memory for output */
     for (int x = 0; x < length; x++) { /* Loop through all the samples */
-        complex float rotation = cexpf(-2 * M_PI * I * (complex float)x / (complex float)length); /* Calculate the rotation value */
+        complex float rotation = cexpf(2 * M_PI * I * (complex float)x / (complex float)length); /* Calculate the rotation value */
         output_value[x] = ifft_even[x % (length/2)] + rotation * ifft_odd[x % (length/2)]; /* Recombine the terms */
     }
     free(even_samples); free(odd_samples);

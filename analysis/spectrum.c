@@ -36,7 +36,7 @@ complex float *fft(float *samples, int length) {
     // Merge step - since we have the odd and even terms, evaluated on the squares of x.
     complex float *fourier_transform = (complex float*)malloc(sizeof(complex float) * length); /* Create the next array */
     for (int x = 0; x < length; x++) { /* Loop through all the roots of unity */
-        complex double rotation = cexp((complex double)(I * M_PI * 2) * ((double)x / (double)length)); /* Calculate rotation */
+        complex double rotation = cexp((complex double)(-I * M_PI * 2) * ((double)x / (double)length)); /* Calculate rotation */
         fourier_transform[x] = fourier_even[x % (length/2)] + rotation * fourier_odd[x % (length/2)]; /* Recombine the terms */
     } /* Finally one stage of the fft is done */
     
@@ -78,7 +78,7 @@ void delete_spectrum(Spectrum *spectrum) {
     free(spectrum);
 }
 
-float *generate_spectrogram(Signal *signal, int fft_samples, int offset) {
+float *generate_spectrogram(Signal *signal, int fft_samples, int offset, int hann_window) {
     /* Generates the float values of the spectrogram from a signal */
     
     // First we need to calculate the number of values in the spectrogram
@@ -88,7 +88,9 @@ float *generate_spectrogram(Signal *signal, int fft_samples, int offset) {
     // Ok, now time to actually generate it.
     for (int step = 0; step < steps; step++) { /* Loop through each timestep in the spectrogram */
         Signal *temporary = trim_signal(signal, offset * step, offset * step + fft_samples); /* Trim a section of the signal */
+        if (hann_window) apply_hann_window(temporary); /* If you want to smoothen the signal apply this window */
         Spectrum *spectrum = discrete_fourier_transform(temporary); /* Get the spectrum */
+        if (hann_window) for (int i = 0; i < (fft_samples / 2); i++) spectrum->amplitudes[i] *= 2; /* Correct for hann window */
         memcpy(&spectrogram[step * fft_samples / 2], spectrum->amplitudes, sizeof(float) * fft_samples / 2); /* Copy in the amplitudes */
         delete_signal(temporary); delete_spectrum(spectrum); /* Clean up */
     }

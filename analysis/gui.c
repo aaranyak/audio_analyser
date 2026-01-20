@@ -24,7 +24,7 @@ void app_start(GtkApplication *app, gpointer *user_data) {
 
     // Create the main window
     GtkWidget *window = gtk_application_window_new(app); /* Create a new window for the app */
-    gtk_window_set_title(GTK_WINDOW (window), "Audio Analyser Tool"); /* Set window title */
+    gtk_window_set_title(GTK_WINDOW (window), "Tabla Sound Analyser Tool"); /* Set window title */
     gtk_window_set_default_size(GTK_WINDOW (window), 1536, 768); /* Some nice round numbers */
 
     // Put stuff inside it

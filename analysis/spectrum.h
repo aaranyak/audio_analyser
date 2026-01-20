@@ -14,6 +14,6 @@ typedef struct spectrum_s {
 
 complex float *fft(float *samples, int length);
 Spectrum *discrete_fourier_transform(Signal *signal);
-float *generate_spectrogram(Signal *signal, int fft_samples, int offset);
+float *generate_spectrogram(Signal *signal, int fft_samples, int offset, int hann_window);
 void delete_spectrum(Spectrum *spectrum);
 #endif

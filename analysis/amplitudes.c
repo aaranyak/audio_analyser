@@ -62,7 +62,7 @@ void generate_amplitude_graph(Signal *signal, float *graph, float frequency, flo
     fft_convolve(component, demod_smooth); /* Apply this lowpass */
 
     for (int i = 0; i < component->length; i++) /* Loop through all the samples in the signal */
-        graph[i] = component->samples[i]; /* This should be obvious */
+        graph[i] = component->samples[i] * 2; /* This should be obvious */ /* Adding the extra 2 as a lifehack step I will get to the bottom of it later */
 
     delete_filter(highpass); delete_filter(lowpass); delete_filter(demod_smooth); delete_signal(component); /* Clean up */
 }
@@ -102,7 +102,7 @@ void generate_amplitudes(GtkButton *button, Analyser *analyser) {
     if (analyser->load_amplitudes) /* We need to clear all the frequency switches */
         while (gtk_container_get_children(GTK_CONTAINER (analyser->freq_flow))) /* As long as there are children */
             gtk_widget_destroy((GtkWidget*)(gtk_container_get_children(GTK_CONTAINER (analyser->freq_flow))->data)); /* delete them */
-    analyser->freq_colours = (float*)malloc(sizeof(float) * num_freqs * 2); /* HSV colour for this */
+    analyser->freq_colours = (float*)malloc(sizeof(float) * num_freqs); /* HSV colour for this */
     for (int index = 0; index < num_freqs; index++) { /* Loop through all the frequencies */
         GtkWidget *display_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0); /* Create a new box */
         char display_text[32]; sprintf(display_text, "%.02fhz", analyser->dominant_frequencies[index]); /* Format the text */
@@ -112,8 +112,7 @@ void generate_amplitudes(GtkButton *button, Analyser *analyser) {
         gtk_container_add(GTK_CONTAINER (analyser->freq_flow), display_container); /* Add this to the flow box */
         gtk_widget_show_all(display_container); /* So that the new widgets are visible */
         g_signal_connect(onoff, "state-set", G_CALLBACK (update_freq_onoff_callback), analyser); /* Add updater */
-        analyser->freq_colours[index << 1] = g_random_double(); /* Initialise a random hsv colour for the freq */
-        analyser->freq_colours[index << 1 & 1] = g_random_double(); /* But with maximum saturation */
+        analyser->freq_colours[index] = g_random_double(); /* Initialise a random hsv colour for the freq */
     }
 
     // Now, to do the amplitude graphs for each of these.
@@ -150,7 +149,7 @@ void draw_amplitudes(GtkWidget *drawing_area, cairo_t *canvas, Analyser *analyse
             int time_index_next = (x + 1) * time_length / size_x; /* Calculate the position to index from */
             float amplitude = analyser->amplitude_graphs[freq_index * time_length + time_index] * scale; /* Get the amplitude for this pixel */
             float amplitude_next = analyser->amplitude_graphs[freq_index * time_length + time_index_next] * scale; /* Get the amplitude for this pixel */
-            set_cairo_hsv(canvas, analyser->freq_colours[freq_index << 1], 1, analyser->freq_colours[freq_index << 1 + 1]); /* Set the colour of the point */
+            set_cairo_hsv(canvas, analyser->freq_colours[freq_index], 1, 0.9); /* Set the colour of the point */
             cairo_move_to(canvas, x, size_y - amplitude * size_y); /* Start line from this point */
             cairo_line_to(canvas, x + 1, size_y - amplitude_next * size_y); /* End line at this point */
             cairo_stroke(canvas); /* Draw the line */
@@ -192,7 +191,7 @@ GtkWidget *amplitudes_view(Analyser *analyser) {
     filter_length = gtk_spin_button_new_with_range(256, 1048576, 1); /* Length of the filte */
     filter_width = gtk_spin_button_new_with_range(0, 128, 0.001); /* Filter frequency width */
     demod_lpf = gtk_spin_button_new_with_range(1, 44100, 0.1); /* Demodulator LPF Frequency */
-    graph_scale = gtk_spin_button_new_with_range(1, 20, 0.01); /* Amplitude Graph Scale */
+    graph_scale = gtk_spin_button_new_with_range(1, 100, 0.01); /* Amplitude Graph Scale */
     generate = gtk_button_new_with_label("Generate Graph"); /* Do all the required generation */
     graph_info = gtk_label_new("Time - , Amplitude - ");
 

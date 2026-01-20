@@ -13,6 +13,7 @@ void delete_signal(Signal *signal);
 int add_sine_wave(Signal *signal, float amplitude, float frequency, float phase);
 int superimpose(Signal *target, Signal *other);
 int change_amplitude(Signal *signal, float factor);
+int apply_hann_window(Signal *signal);
 void render_samples(Signal *signal, int offset, int samples, int together, int height, int scale);
 Signal *trim_signal(Signal *original, size_t start, size_t end);
 Signal *copy_signal(Signal *original);

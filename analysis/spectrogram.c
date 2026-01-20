@@ -19,7 +19,7 @@ void spec_gen_callback(GtkButton *button, Analyser *analyser) {
     int spec_offset = gtk_spin_button_get_value(GTK_SPIN_BUTTON(spinbutton)); /* Set the value */
     spinbutton = (GtkWidget*)gtk_container_get_children(GTK_CONTAINER (gtk_widget_get_parent(GTK_WIDGET (button))))->next->data;
     analyser->spec_length = gtk_spin_button_get_value(GTK_SPIN_BUTTON(spinbutton)); /* Set the value */
-    analyser->spectrogram = generate_spectrogram(signal, analyser->spec_length, spec_offset); /* Generate spectrogram */
+    analyser->spectrogram = generate_spectrogram(signal, analyser->spec_length, spec_offset, 1); /* Generate spectrogram */
     analyser->spec_num = (signal->length - analyser->spec_length) / spec_offset; /* Set the number of spectra in it */
     analyser->spec_res = (float)signal->rate / (float)analyser->spec_length; /* Calculate spec res */
     delete_signal(signal); /* Delete the trimmed version */
@@ -72,8 +72,10 @@ void draw_spectrogram(GtkWidget *drawing_area, cairo_t *canvas, Analyser *analys
         for (int x = 0; x < size_x; x++) { /* Loop through all the x values */
             int target_freq =  freq_offset + ((float)y / (float)size_y) * ((max_freq - min_freq) / analyser->spec_res); /* Calculate the current target frequency */
             int target_spec = (x * analyser->spec_num) / size_x; /* Calculate the current target spectrum */
-            float amplitude = fmin(analyser->spectrogram[target_spec * num_freqs + target_freq] * analyser->spec_scale, 1); /* format */
-            set_cairo_hsv(canvas, 1.0 - amplitude, 1.0, amplitude); /* Set the hsv properly */
+            float amplitude = analyser->spectrogram[target_spec * num_freqs + target_freq]; /* Scale the amplitude */
+            float db = 20 * log(amplitude); /* Convert to db */
+            float output = (analyser->spec_scale*20 + db) / (20 + analyser->spec_scale*20); /* Rescale output based on scaling factor */
+            set_cairo_hsv(canvas, 1.0 - 2*fmax(fmin(output, 1), 0), 1.0, 2*fmax(fmin(output, 1), 0)); /* Set the hsv properly */
             cairo_rectangle(canvas, x, size_y - y, 1, 1); /* A 1px rect */
             cairo_fill(canvas); /* Yay drawing one pixel */
         } /* Odd indentation I know, but what can I do? */
@@ -117,7 +119,7 @@ GtkWidget *spectrogram_view(Analyser *analyser) {
     
     bottom_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0); /* Another one */
     gtk_box_set_homogeneous(GTK_BOX (bottom_row), 0); /* Make better looking box */
-    scale_volume = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0.0, 128.0, 0.001); /* Add a scale for helping better specs */
+    scale_volume = gtk_scale_new_with_range(GTK_ORIENTATION_VERTICAL, 0.0, 32.0, 0.001); /* Add a scale for helping better specs */
     gtk_range_set_inverted(GTK_RANGE (scale_volume), 1); /* Invert scale */
     gtk_range_set_value(GTK_RANGE (scale_volume), analyser->spec_scale); /* Set this */
     canvas = gtk_drawing_area_new(); /* Figure out the size of this later */

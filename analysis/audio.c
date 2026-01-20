@@ -27,6 +27,13 @@ int add_sine_wave(Signal *signal, float amplitude, float frequency, float phase)
     return 0;
 }
 
+int apply_hann_window(Signal *signal) {
+    /* Applies a hann window to a signal */
+    for (size_t i = 0; i < signal->length; i++) /* Loop through all the samples */
+        signal->samples[i] *= 0.5 - 0.5*cos(2.0 * M_PI * ((float)i / signal->length)); /* Multiply signal by hann window */
+    return 0;
+}
+
 int superimpose(Signal *target, Signal *other) {
     /* Superimposes the second signal onto the first one */
     if (target->rate != other->rate) return 1; /* Check if they match sample rates */
