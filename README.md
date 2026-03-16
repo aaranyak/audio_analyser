@@ -1,3 +1,3 @@
-# Tabla Synthesiser Project
+# Musical Instrument Sound Analyser Tool
 
-Conducting some experiments in developing a digital synthesiser for producing tabla sounds.
+
