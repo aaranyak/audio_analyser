@@ -37,7 +37,7 @@ typedef struct analyser { /* This contains all analyser info */
     GtkWidget *spec_display, *spec_min_freq, *spec_max_freq, *spec_mouse_info; /* The canvas */
 
     // Amplitudes Graph
-    GtkWidget *search_min, *search_max, *search_num, *freq_flow, *search_margin, *filter_length, *filter_width, *demod_lpf, *graph_scale, *graph_info; /* For updating this */
+    GtkWidget *search_min, *search_max, *search_num, *freq_flow, *search_margin, *filter_length, *filter_width, *demod_lpf, *graph_scale, *graph_info, *num_samples; /* For updating this */
     int load_amplitudes, *freq_onoffs; /* Just a check to see whether to load these or not */
     float *dominant_frequencies, *freq_colours; /* Array of length */
     float *amplitude_graphs; /* num freqs * clip length */

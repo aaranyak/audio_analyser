@@ -74,22 +74,22 @@ void fft_convolve(Signal *signal, Filter *filter) {
 // Time to create a windowed-sinc fylter
 
 Filter *lowpass_filter(int length, float frequency, int rate) {
-    /* Creates a blackman-windowed lowpass sinc filter */
+    /* Creates a blackman-windowed lowpass sinc fylter */
     Filter *filter = delta_function(length); /* Create the filter object */
     frequency = frequency / rate; /* Correct the frequency as a fraction of the rate */
-    for (int i = 0; i < filter->length; i++) { /* Loop through all the values in the filter */
+    for (int i = 0; i < filter->length; i++) { /* Loop through all the values in the fylter */
         int x = i - filter->offset; /* Correct the position */
         filter->kernel[i] = sin(2.0 * M_PI * x * frequency) / (M_PI * x); /* Evaluate the fylter kernel at this point */
         filter->kernel[i] *= 0.42 - 0.5 * cos(2 * M_PI * i / length) + 0.08 * cos(4 * M_PI * i / length); /* Blackmann Window */
     }
     filter->kernel[filter->offset] = 2 * M_PI * frequency; /* Correct divide-by-zero errors */
-    return filter; /* Return the filter */
+    return filter; /* Return the fylter */
 }        
 
 // I basically invert the highpass filter.
 Filter *highpass_filter(int length, float frequency, int rate) {
-    /* Creates a blackman-windowed highpass sinc filter */
-    Filter *filter = delta_function(length); /* Create the filter object */
+    /* Creates a blackman-windowed highpass sinc fylter */
+    Filter *filter = delta_function(length); /* Create the fylter object */
     frequency = frequency / rate; /* Correct the frequency as a fraction of the rate */
     for (int i = 0; i < filter->length; i++) { /* For each thing in this */
         int x = i - filter->offset; /* Correct the position */

@@ -169,12 +169,50 @@ void graph_info_callback(GtkWidget *drawing_area, GdkEventMotion *event, Analyse
     gtk_label_set_text(GTK_LABEL (analyser->graph_info), label_text); /* Set the text */
 }
 
+void output_data(GtkWidget *button, Analyser *analyser) {
+    /* Stuff needed to output amplitude graphs */
+    
+    // Get file path
+    if (!analyser->load_amplitudes) return; /* This prevents various nasty segfaults */
+    GtkFileChooserNative *file_chooser = gtk_file_chooser_native_new("Save data as CSV", /* Create a file chooser dialog */
+                                                                     GTK_WINDOW(gtk_widget_get_toplevel(button)), /* main window */
+                                                                     GTK_FILE_CHOOSER_ACTION_SAVE, /* Save this and not open */
+                                                                     NULL, /* IDK why bee hold is funny but it is */
+                                                                     NULL); /* Create a dialog that saves a file */
+    gint result = gtk_native_dialog_run(GTK_NATIVE_DIALOG (file_chooser)); /* get the file */
+    if (result != GTK_RESPONSE_ACCEPT) { /* If the reponse is canceled */
+        g_object_unref(file_chooser); return; /* Free resources and get out */
+    }
+    char *file_path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER (file_chooser)); /* Get the file path */
+
+    // First calculate the length of stuff
+    int num_samples = gtk_spin_button_get_value(GTK_SPIN_BUTTON(analyser->num_samples)); /* Get the value of this thing */
+    int num_freqs = gtk_spin_button_get_value(GTK_SPIN_BUTTON(analyser->search_num)); /* Get the value of this other thing */
+    int text_length = 9 * num_samples * (num_freqs + 1); /* Length of the text */
+    int clip_start = analyser->clip_start, clip_end = analyser->clip_end; /* Necessary to not sacrifice incomprehensable hidden puns */
+    char *out_text = (char*)malloc(text_length + 1); /* Get a text putting space */
+    int write_head = 0, clip_length = clip_end - clip_start; float value; char intermediate[11]; /* A useful variable to do this stuff */
+    // Secondly, put the ACTUAL data into a csv
+    for (int sample = 0; sample < num_samples; sample++) { /* Loop through all the sample points */ 
+        value = (clip_start + ((float)sample / (float)num_samples) * clip_length) / (float)analyser->recording->signal->rate; /* MATH */
+        sprintf(intermediate, "%.4f,", value); /* Put this in the intermediate thing */
+        memcpy(out_text + write_head, intermediate, strlen(intermediate)); write_head += strlen(intermediate); /* Write it in */
+        for (int signal = 0; signal < num_freqs; signal++) { /* Too many for-loops make my code feel weird, especially nested ones */
+            value = analyser->amplitude_graphs[signal*clip_length + sample*clip_length / num_samples]; /* Get the current sample */ 
+            sprintf(intermediate, "%.4f%c", value, (num_freqs - signal - 1) ? ',' : '\n'); /* Put this in the intermediate thing */
+            memcpy(out_text + write_head, intermediate, strlen(intermediate)); write_head += strlen(intermediate); /* Write it in */
+        }
+    }
+    FILE *out_file = fopen(file_path, "w"); /* Open the out file */
+    for (int i = 0; i < write_head; i++) fputc(out_text[i], out_file); /* Write the text into the file */
+    fclose(out_file); free(out_text); g_object_unref(file_chooser); /* I've had enough, I tell you */
+}
 
 GtkWidget *amplitudes_view(Analyser *analyser) {
     /* Shows a view of the change in amplitudes of the major frequencies */
 
     GtkWidget *container, *graph_row, *data_row; /* The thing that returnes everything */
-    GtkWidget *buttons_grid, *flow, *flow_container, *search_min, *search_max, *search_num, *filter_length, *filter_width, *generate, *search_margin, *demod_lpf, *graph_scale, *graph_info; /* The frequency searching settings */
+    GtkWidget *buttons_grid, *flow, *flow_container, *search_min, *search_max, *search_num, *filter_length, *filter_width, *generate, *search_margin, *demod_lpf, *graph_scale, *graph_info, *num_samples, *output; /* The frequency searching settings */
     GtkWidget *graph_canvas;
     
     // Create the widgets
@@ -187,12 +225,14 @@ GtkWidget *amplitudes_view(Analyser *analyser) {
     search_min = gtk_spin_button_new_with_range(0, 44100, 1); /* Spin to set min search freq */
     search_max = gtk_spin_button_new_with_range(0, 44100, 1); /* Spin to set the max search freq */
     search_num = gtk_spin_button_new_with_range(0, 20, 1); /* Spin to set the number of searches */
-    search_margin = gtk_spin_button_new_with_range(0, 128, 0.001); /* Gap to leave between frequencies */
+    search_margin = gtk_spin_button_new_with_range(0, 1000, 0.001); /* Gap to leave between frequencies */
     filter_length = gtk_spin_button_new_with_range(256, 1048576, 1); /* Length of the filte */
-    filter_width = gtk_spin_button_new_with_range(0, 128, 0.001); /* Filter frequency width */
+    filter_width = gtk_spin_button_new_with_range(0, 1000, 0.001); /* Filter frequency width */
     demod_lpf = gtk_spin_button_new_with_range(1, 44100, 0.1); /* Demodulator LPF Frequency */
     graph_scale = gtk_spin_button_new_with_range(1, 100, 0.01); /* Amplitude Graph Scale */
     generate = gtk_button_new_with_label("Generate Graph"); /* Do all the required generation */
+    output = gtk_button_new_with_label("Save CSV"); /* Output the data as a CSV file */
+    num_samples = gtk_spin_button_new_with_range(10, 100000, 1); /* Number of samples for output log */
     graph_info = gtk_label_new("Time - , Amplitude - ");
 
     // Now for the canvas
@@ -206,12 +246,13 @@ GtkWidget *amplitudes_view(Analyser *analyser) {
     gtk_widget_set_size_request(graph_canvas, -1, 512); /* Make the graph big */
 
     // Dump everything into the state struct
-    analyser->search_min = search_min; analyser->search_max = search_max; analyser->search_num = search_num; analyser->freq_flow = flow; analyser->search_margin = search_margin; analyser->filter_width = filter_width; analyser->filter_length = filter_length; analyser->graph_canvas = graph_canvas; analyser->demod_lpf = demod_lpf; analyser->graph_scale = graph_scale; analyser->graph_info = graph_info;
+    analyser->search_min = search_min; analyser->search_max = search_max; analyser->search_num = search_num; analyser->freq_flow = flow; analyser->search_margin = search_margin; analyser->filter_width = filter_width; analyser->filter_length = filter_length; analyser->graph_canvas = graph_canvas; analyser->demod_lpf = demod_lpf; analyser->graph_scale = graph_scale; analyser->graph_info = graph_info; analyser->num_samples = num_samples;
 
     // Time to connect signals.
     analyser->load_amplitudes = 0;
     gtk_widget_add_events(graph_canvas, GDK_POINTER_MOTION_MASK); /* Detect mouse motion */
     g_signal_connect(generate, "clicked", G_CALLBACK (generate_amplitudes), analyser); /* There you go */
+    g_signal_connect(output, "clicked", G_CALLBACK (output_data), analyser); /* There you go */
     g_signal_connect(graph_canvas, "motion-notify-event", G_CALLBACK (graph_info_callback), analyser); /* Connect the mouse signal */
     g_signal_connect(graph_canvas, "draw", G_CALLBACK (draw_amplitudes), analyser); /* The drawing signal */
     g_signal_connect_swapped(graph_scale, "value-changed", G_CALLBACK (gtk_widget_queue_draw), graph_canvas); /* Redraw the graph */
@@ -228,7 +269,9 @@ GtkWidget *amplitudes_view(Analyser *analyser) {
     gtk_grid_attach(GTK_GRID (buttons_grid), demod_lpf, 2, 1, 1, 1); /* Add this to the grid */
     gtk_grid_attach(GTK_GRID (buttons_grid), graph_scale, 3, 1, 1, 1); /* Add this to the grid */
     gtk_grid_attach(GTK_GRID (buttons_grid), generate, 0, 2, 1, 1); /* Add this to the grid */
-    gtk_grid_attach(GTK_GRID (buttons_grid), graph_info, 1, 2, 3, 1); /* Add this to the grid */
+    gtk_grid_attach(GTK_GRID (buttons_grid), graph_info, 1, 2, 1, 1); /* Add this to the grid */
+    gtk_grid_attach(GTK_GRID (buttons_grid), num_samples, 2, 2, 1, 1); /* Add this to the grid */
+    gtk_grid_attach(GTK_GRID (buttons_grid), output, 3, 2, 1, 1); /* Add this to the grid */
     gtk_box_pack_end(GTK_BOX (data_row), flow_container, 1, 1, 20); /* Make this fill */
     gtk_box_pack_end(GTK_BOX (data_row), flow, 1, 1, 20); /* Make this fill */
     gtk_box_pack_start(GTK_BOX (container), graph_row, 0, 0, 20); /* Pack in the graph row */
