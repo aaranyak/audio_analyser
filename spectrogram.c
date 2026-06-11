@@ -140,9 +140,13 @@ GtkWidget *spectrogram_view(Analyser *analyser) {
     // Packing time
     gtk_box_pack_start(GTK_BOX (container), top_row, 0, 0, 10); /* Pack in the top row */
     gtk_box_pack_start(GTK_BOX (container), bottom_row, 0, 0, 10); /* Pack in the bottom row */
+    gtk_box_pack_start(GTK_BOX (top_row), gtk_label_new("         Segment Offset"), 1, 0, 0); /* Add label for offset */
     gtk_box_pack_start(GTK_BOX (top_row), offset_spin, 1, 0, 20); /* Pack it in the top row */
+    gtk_box_pack_start(GTK_BOX (top_row), gtk_label_new("         Segment Length"), 1, 0, 0); /* Add label for length */
     gtk_box_pack_start(GTK_BOX (top_row), length_spin, 1, 0, 20); /* Pack it in the top row */
+    gtk_box_pack_start(GTK_BOX (top_row), gtk_label_new("         Minimum Frequency"), 1, 0, 0); /* Add label for freq min */
     gtk_box_pack_start(GTK_BOX (top_row), min_freq, 1, 0, 20); /* Pack it in the top row */
+    gtk_box_pack_start(GTK_BOX (top_row), gtk_label_new("         Maximum Frequency"), 1, 0, 0); /* Add label for freq max */
     gtk_box_pack_start(GTK_BOX (top_row), max_freq, 1, 0, 20); /* Pack it in the top row */
     gtk_box_pack_start(GTK_BOX (top_row), generate, 1, 0, 20); /* Pack it in the top row */
     gtk_box_pack_start(GTK_BOX (top_row), mouse_info, 1, 0, 20); /* Pack it in the top row */
