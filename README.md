@@ -11,5 +11,15 @@
 ### Spectrogram Generator
 <img width="1428" height="589" alt="image" src="https://github.com/user-attachments/assets/617df5b8-6a85-40b3-ae4d-007da4765a6c" />
 
-*This tool generates a spectrogram from the trimmed region of the audio file.*
+*This tool generates a spectrogram from the trimmed region of the audio file. The buttons below, from left to right respectively are*
 
+ 1. Offset between each time-domain segment of the spectrogram
+ 2. Length of each time-domain segment of the spectrogram
+ 3. Minimum frequency displayed on the spectrogram
+ 4. Button to generate the spectrogram.
+ 5. Slider to change the amplitude range displayed on the spectrogram.
+
+### Amplitude Graph Generator
+<img width="1835" height="737" alt="image" src="https://github.com/user-attachments/assets/a3c26a88-17ec-4517-bf29-ed21290da5c7" />
+
+*
